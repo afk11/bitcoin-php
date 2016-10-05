@@ -71,6 +71,9 @@ class Bip39Mnemonic implements MnemonicInterface
     public function entropyToWords(BufferInterface $entropy)
     {
         $math = $this->ecAdapter->getMath();
+        if ($entropy->getSize() % 4 !== 0) {
+            throw new \RuntimeException('Entropy must be evenly divided into chunks of 4 bytes');
+        }
 
         $ENT = $entropy->getSize() * 8;
         $CS = $ENT / 32;
