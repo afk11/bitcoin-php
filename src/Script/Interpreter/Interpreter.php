@@ -287,7 +287,7 @@ class Interpreter implements InterpreterInterface
             $scriptPubKey = new Script($stack->bottom());
             $stack->pop();
 
-            if (!$this->evaluate($scriptPubKey, $stack, 0, $flags, $checker)) {
+            if (!$this->evaluate($scriptPubKey, $stack, SigHash::V0, $flags, $checker)) {
                 return false;
             }
 
@@ -320,7 +320,7 @@ class Interpreter implements InterpreterInterface
                 return false; // implied flags required
             }
 
-            if (count($stack) != 1) {
+            if (count($stack) !== 1) {
                 return false; // Cleanstack
             }
         }
