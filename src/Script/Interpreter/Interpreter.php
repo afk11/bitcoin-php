@@ -162,7 +162,7 @@ class Interpreter implements InterpreterInterface
                 }
 
                 $scriptPubKey = new Script($scriptWitness[$witnessCount - 1]);
-                $stackValues = $scriptWitness->slice(0, -1);
+                $stackValues = $scriptWitness->slice(0, -1)->all();
                 $hashScriptPubKey = Hash::sha256($scriptPubKey->getBuffer());
 
                 if (!$hashScriptPubKey->equals($buffer)) {
@@ -176,7 +176,7 @@ class Interpreter implements InterpreterInterface
                 }
 
                 $scriptPubKey = ScriptFactory::scriptPubKey()->payToPubKeyHashFromHash($buffer);
-                $stackValues = $scriptWitness;
+                $stackValues = $scriptWitness->all();
             } else {
                 return false;
             }
@@ -186,11 +186,7 @@ class Interpreter implements InterpreterInterface
             return false;
         }
 
-        $mainStack = new Stack();
-        foreach ($stackValues as $value) {
-            $mainStack->push($value);
-        }
-
+        $mainStack = new Stack($stackValues);
         if (!$this->evaluate($scriptPubKey, $mainStack, 1, $flags, $checker)) {
             return false;
         }
@@ -234,9 +230,7 @@ class Interpreter implements InterpreterInterface
 
         $backup = [];
         if ($flags & self::VERIFY_P2SH) {
-            foreach ($stack as $s) {
-                $backup[] = $s;
-            }
+            $backup = $stack->all();
         }
 
         if (!$this->evaluate($scriptPubKey, $stack, 0, $flags, $checker)) {
@@ -272,10 +266,7 @@ class Interpreter implements InterpreterInterface
                 return false;
             }
 
-            $stack = new Stack();
-            foreach ($backup as $i) {
-                $stack->push($i);
-            }
+            $stack = new Stack($backup);
 
             // Restore mainStack to how it was after evaluating scriptSig
             if ($stack->isEmpty()) {
