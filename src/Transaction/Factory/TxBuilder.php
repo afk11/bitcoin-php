@@ -3,6 +3,7 @@
 namespace BitWasp\Bitcoin\Transaction\Factory;
 
 use BitWasp\Bitcoin\Address\AddressInterface;
+use BitWasp\Bitcoin\Exceptions\TxBuilderException;
 use BitWasp\Bitcoin\Locktime;
 use BitWasp\Bitcoin\Script\Script;
 use BitWasp\Bitcoin\Script\ScriptFactory;
@@ -25,32 +26,32 @@ class TxBuilder
     /**
      * @var int
      */
-    private $nVersion;
+    private $nVersion = 1;
 
     /**
      * @var array
      */
-    private $inputs;
+    private $inputs = [];
 
     /**
      * @var array
      */
-    private $outputs;
+    private $outputs = [];
 
     /**
      * @var array
      */
-    private $witness;
+    private $witness = [];
 
     /**
      * @var int
      */
-    private $nLockTime;
+    private $nLockTime = 0;
 
-    public function __construct()
-    {
-        $this->reset();
-    }
+    /**
+     * @var array
+     */
+    private $hashMap = [];
 
     /**
      * @return $this
@@ -59,6 +60,7 @@ class TxBuilder
     {
         $this->nVersion = 1;
         $this->inputs = [];
+        $this->hashMap = [];
         $this->outputs = [];
         $this->witness = [];
         $this->nLockTime = 0;
@@ -110,14 +112,14 @@ class TxBuilder
      */
     public function input($hashPrevOut, $nPrevOut, Script $script = null, $nSequence = TransactionInputInterface::SEQUENCE_FINAL)
     {
-        $this->inputs[] = new TransactionInput(
+        $this->inputs([new TransactionInput(
             new OutPoint(
                 $hashPrevOut instanceof BufferInterface ? $hashPrevOut : Buffer::hex($hashPrevOut, 32),
                 $nPrevOut
             ),
             $script ?: new Script(),
             $nSequence
-        );
+        )]);
 
         return $this;
     }
@@ -125,12 +127,25 @@ class TxBuilder
     /**
      * @param TransactionInputInterface[] $inputs
      * @return $this
+     * @throws TxBuilderException
      */
     public function inputs(array $inputs)
     {
-        array_walk($inputs, function (TransactionInputInterface $input) {
+        foreach ($inputs as $i => $input) {
+            if (!($input instanceof TransactionInputInterface)) {
+                throw new \InvalidArgumentException("Passed invalid data to inputs, TransactionInputInterface[] expected");
+            }
+
+            $outpoint = $input->getOutPoint();
+            $key = $outpoint->getTxId()->getBinary() . $outpoint->getVout();
+
+            if (isset($this->hashMap[$key])) {
+                throw new TxBuilderException("Cannot add duplicate inputs to transaction");
+            }
+
             $this->inputs[] = $input;
-        });
+            $this->hashMap[$key] = true;
+        }
 
         return $this;
     }
@@ -233,13 +248,11 @@ class TxBuilder
     public function spendOutputFrom(TransactionInterface $transaction, $outputToSpend, ScriptInterface $script = null, $nSequence = TransactionInputInterface::SEQUENCE_FINAL)
     {
         // Check TransactionOutput exists in $tx
-        $transaction->getOutput($outputToSpend);
-        $this->input(
-            $transaction->getTxId(),
-            $outputToSpend,
-            $script,
-            $nSequence
-        );
+        if (!isset($transaction->getOutputs()[$outputToSpend])) {
+            throw new \RuntimeException("The requested output does not exist on that transaction");
+        }
+
+        $this->input($transaction->getTxId(), $outputToSpend, $script, $nSequence);
 
         return $this;
     }

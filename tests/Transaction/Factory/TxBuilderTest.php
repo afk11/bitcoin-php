@@ -10,7 +10,9 @@ use BitWasp\Bitcoin\Script\Script;
 use BitWasp\Bitcoin\Script\ScriptFactory;
 use BitWasp\Bitcoin\Tests\AbstractTestCase;
 use BitWasp\Bitcoin\Transaction\Factory\TxBuilder;
+use BitWasp\Bitcoin\Transaction\OutPoint;
 use BitWasp\Bitcoin\Transaction\Transaction;
+use BitWasp\Bitcoin\Transaction\TransactionInput;
 use BitWasp\Bitcoin\Transaction\TransactionOutput;
 use BitWasp\Buffertools\Buffer;
 
@@ -59,6 +61,33 @@ class TxBuilderTest extends AbstractTestCase
 
         $reset = $builder->get();
         $this->assertNotEquals($tx, $reset);
+    }
+
+    /**
+     * @expectedException \BitWasp\Bitcoin\Exceptions\TxBuilderException
+     * @expectedExceptionMessage Cannot add duplicate inputs to transaction
+     */
+    public function testRejectsDuplicateInputs()
+    {
+        $builder = new TxBuilder();
+        $builder->input('abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234', 0);
+        $builder->input('abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234', 0);
+    }
+
+
+    /**
+     * @expectedException \BitWasp\Bitcoin\Exceptions\TxBuilderException
+     * @expectedExceptionMessage Cannot add duplicate inputs to transaction
+     */
+    public function testRejectsDuplicateInputsArray()
+    {
+        $empty = new Script(new Buffer());
+        $builder = new TxBuilder();
+
+        $builder->inputs([
+            new TransactionInput(new OutPoint(Buffer::hex('abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234', 32), 0), $empty),
+            new TransactionInput(new OutPoint(Buffer::hex('abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234', 32), 0), $empty),
+        ]);
     }
 
     public function testSpendsOutputFrom()
