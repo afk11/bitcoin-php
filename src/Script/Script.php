@@ -275,14 +275,8 @@ class Script extends Serializable implements ScriptInterface
      */
     public function __debugInfo()
     {
-        try {
-            $decoded = $this->getScriptParser()->getHumanReadable();
-        } catch (\Exception $e) {
-            $decoded = 'decode failed';
-        }
         return [
             'hex' => bin2hex($this->script),
-            'asm' => $decoded
         ];
     }
 }
