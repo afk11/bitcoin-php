@@ -7,6 +7,7 @@ use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
 use BitWasp\Bitcoin\Crypto\Hash;
 use BitWasp\Bitcoin\Exceptions\ScriptRuntimeException;
 use BitWasp\Bitcoin\Exceptions\SignatureNotCanonical;
+use BitWasp\Bitcoin\Merkle\MerkleBranch;
 use BitWasp\Bitcoin\Script\Classifier\OutputClassifier;
 use BitWasp\Bitcoin\Script\Opcodes;
 use BitWasp\Bitcoin\Script\Script;
@@ -135,7 +136,7 @@ class Interpreter implements InterpreterInterface
      */
     private function checkOpcodeCount($count)
     {
-        if ($count > 201) {
+        if ($count > self::MAX_OPS_PER_SCRIPT) {
             throw new \RuntimeException('Error: Script op code count');
         }
 
@@ -144,41 +145,177 @@ class Interpreter implements InterpreterInterface
 
     /**
      * @param WitnessProgram $witnessProgram
-     * @param ScriptWitnessInterface $scriptWitness
+     * @param ScriptWitnessInterface $witness
      * @param int $flags
      * @param Checker $checker
      * @return bool
      */
-    private function verifyWitnessProgram(WitnessProgram $witnessProgram, ScriptWitnessInterface $scriptWitness, $flags, Checker $checker)
+    private function verifyWitnessProgram(WitnessProgram $witnessProgram, ScriptWitnessInterface $witness, $flags, Checker $checker)
     {
-        $witnessCount = count($scriptWitness);
+        $witVersion = $witnessProgram->getVersion();
+        $program = $witnessProgram->getProgram();
+        $witnessCount = count($witness);
 
-        if ($witnessProgram->getVersion() === 0) {
-            $buffer = $witnessProgram->getProgram();
-            if ($buffer->getSize() === 32) {
+        if ($witVersion === 0) {
+            if ($program->getSize() === 32) {
                 // Version 0 segregated witness program: SHA256(Script) in program, Script + inputs in witness
                 if ($witnessCount === 0) {
                     // Must contain script at least
                     return false;
                 }
 
-                $scriptPubKey = new Script($scriptWitness[$witnessCount - 1]);
-                $stackValues = $scriptWitness->slice(0, -1);
-                if (!$buffer->equals($scriptPubKey->getWitnessScriptHash())) {
+                $scriptPubKey = new Script($witness[$witnessCount - 1]);
+                $stackValues = $witness->slice(0, -1);
+                if (!$program->equals($scriptPubKey->getWitnessScriptHash())) {
                     return false;
                 }
-            } elseif ($buffer->getSize() === 20) {
+            } elseif ($program->getSize() === 20) {
                 // Version 0 special case for pay-to-pubkeyhash
                 if ($witnessCount !== 2) {
                     // 2 items in witness - <signature> <pubkey>
                     return false;
                 }
 
-                $scriptPubKey = ScriptFactory::scriptPubKey()->payToPubKeyHash($buffer);
-                $stackValues = $scriptWitness;
+                $scriptPubKey = ScriptFactory::scriptPubKey()->payToPubKeyHash($program);
+                $stackValues = $witness;
             } else {
                 return false;
             }
+        } else if ($witVersion === 1 & $program->getSize() === 32 && ($flags & self::VERIFY_MAST)) {
+            $mastVersion = 0;
+            $scriptHashBin = "";
+            $rootBin = "";
+
+            $stackSize = $witness->count();
+            if ($stackSize < 4) {
+                return false;
+                //throw new ScriptRuntimeException(self::VERIFY_MAST, "Stack size too small for MAST");
+            }
+
+            /** @var BufferInterface $metadata */
+            $metadata = $witness[-1];
+            if ($metadata->getSize() < 1 || $metadata->getSize() > 5) {
+                return false;
+                //throw new ScriptRuntimeException(self::VERIFY_MAST, "Invalid length for metadata");
+            }
+
+            // first byte of metadata is nSubScript
+            $nSubScriptVch = $metadata->slice(0, 1);
+            $nSubScript = $nSubScriptVch->getInt();
+            if ($nSubScript == 0 || $stackSize < $nSubScript + 3) {
+                return false;
+            }
+
+            $nOpCount = 0;
+            $scriptHashBin .= $nSubScriptVch->getBinary();
+
+            if ($metadata->getBinary()[$metadata->getSize() - 1] === "\x00") {
+                return false;
+            }
+            if ($metadata->getSize() > 1) {
+                for ($i = 1, $end = $metadata->getSize(); $i != $end; ++$i) {
+                    $mastVersion |= ord($metadata->getBinary()[$i]) << 8 * ($i - 1);
+                }
+            }
+
+            if ($mastVersion > 0 && ($flags & self::VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)) {
+                return false;
+            }
+
+            $rootBin .= pack('V', $mastVersion);
+
+            /** @var BufferInterface $pathData */
+            $pathData = $witness[$stackSize - 2];
+            if ($pathData->getSize() & 0x1f) {
+                return false;
+            }
+
+            $depth = $pathData->getSize() >> 5;
+            if ($depth > 32) {
+                return false;
+            }
+
+            $nOpCount = $nOpCount + $depth;
+
+            if ($mastVersion === 0 && $nOpCount > self::MAX_OPS_PER_SCRIPT) {
+                return false;
+            }
+
+            $path = [];
+            for ($j = 0; $j < $depth; $j++) {
+                $path[$j] = $pathData->slice($j * 32, 32);
+            }
+
+            /** @var BufferInterface $positionData */
+            $positionData = $witness[$stackSize - 3];
+            if ($positionData->getSize() > 4) {
+                return false;
+            }
+
+            $position = 0;
+            if ($positionData->getSize() > 0) {
+                if ($positionData->getBinary()[$positionData->getSize() - 1] === "\x00") {
+                    return false;
+                }
+                if ($positionData->getSize() > 1) {
+                    for ($k = 1, $end = $positionData->getSize(); $k != $end; ++$k) {
+                        $position |= ord($positionData->getBinary()[$k]) << 8 * ($k - 1);
+                    }
+                }
+            }
+
+            if ($depth < 32) {
+                if ($position >= (1 << $depth)) {
+                    return false;
+                }
+            }
+
+            $scriptPubKeyBin = new Buffer();
+            for ($i = $stackSize - $nSubScript - 3; $i <= $stackSize - 4; $i++) {
+                /** @var BufferInterface $subscriptN */
+                $subscriptN = $witness[$i];
+
+                if ($mastVersion === 0 && ($scriptPubKeyBin->getSize() + $subscriptN->getSize()) > Script::MAX_SCRIPT_SIZE) {
+                    return false;
+                }
+
+                $hashSubScript = Hash::sha256($subscriptN);
+                $scriptHashBin .= $hashSubScript->getBinary();
+                $scriptPubKeyBin = $scriptPubKeyBin->getBinary() . $subscriptN->getBinary();
+            }
+
+            $hashScript = Hash::sha256d($scriptPubKeyBin);
+            $scriptPubKey = new Script($scriptPubKeyBin);
+
+            $merkleBranch = new MerkleBranch();
+            $rootScript = $merkleBranch->computeRootFromBranch($hashScript, $path, $position);
+
+            $rootBin .= $rootScript->getBinary();
+            $rootMast = Hash::sha256d(new Buffer($rootBin));
+
+            if (!$rootMast->equals($program)) {
+                return false;
+            }
+
+            if ($mastVersion === 0) {
+                $stack = new Stack($witness->slice(0, $witnessCount - 1 - 3 - $nSubScript)->all());
+                for ($i = 0, $l = count($stack); $i < $l; $i++) {
+                    if ($stack[-$i - 1]->getSize() > Interpreter::MAX_SCRIPT_ELEMENT_SIZE) {
+                        return false;
+                    }
+                }
+
+                if (!$this->evaluate($scriptPubKey, $stack, SigHash::V1, $flags, $checker)) {
+                    return false;
+                }
+
+                if ($stack->count() != 0) {
+                    return false;
+                }
+            }
+
+            return true;
+
         } elseif ($flags & self::VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM) {
             return false;
         } else {

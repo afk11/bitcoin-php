@@ -13,6 +13,8 @@ use BitWasp\Buffertools\BufferInterface;
 
 class Script extends Serializable implements ScriptInterface
 {
+    const MAX_OPS_PER_SCRIPT = 201;
+    const MAX_SCRIPT_SIZE = 10000;
 
     /**
      * @var Opcodes

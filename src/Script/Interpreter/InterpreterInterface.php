@@ -74,10 +74,7 @@ interface InterpreterInterface
 
     const VERIFY_NULLFAIL = 1 << 14;
 
-    // Verify CHECKSEQUENCEVERIFY
-    //
-    // See BIP112 for details.
-
+    const VERIFY_MAST = 1 << 15;
 
 
     const SIGHASH_ALL          = 0x1;
