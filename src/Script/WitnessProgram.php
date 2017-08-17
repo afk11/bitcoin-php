@@ -80,4 +80,13 @@ class WitnessProgram
 
         return $this->outputScript;
     }
+
+    /**
+     * @param WitnessProgram $other
+     * @return bool
+     */
+    public function equals(WitnessProgram $other)
+    {
+        return $this->version === $other->getVersion() && $this->program->equals($other->program);
+    }
 }
