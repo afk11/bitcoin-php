@@ -186,7 +186,6 @@ class Bech32Test extends AbstractTestCase
      */
     public function testInvalidAddress($bech32)
     {
-
         try {
             SegwitBech32::decode($bech32, NetworkFactory::bitcoin());
             $threw = false;
