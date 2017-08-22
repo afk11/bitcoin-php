@@ -2,7 +2,6 @@
 
 namespace BitWasp\Bitcoin\Address;
 
-
 use BitWasp\Bitcoin\Bech32;
 use BitWasp\Bitcoin\Bitcoin;
 use BitWasp\Bitcoin\Exceptions\Bech32Exception;
