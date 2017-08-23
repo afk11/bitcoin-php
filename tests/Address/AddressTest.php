@@ -78,7 +78,7 @@ class AddressTest extends AbstractTestCase
      * @param $address
      * @throws \Exception
      */
-    public function testAddress($type, NetworkInterface $network, $data, $address, $t1=null)
+    public function testAddress($type, NetworkInterface $network, $data, $address, $t1 = null)
     {
         if ($type === 'pubkeyhash') {
             $obj = PublicKeyFactory::fromHex($data)->getAddress();
