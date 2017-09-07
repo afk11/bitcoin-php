@@ -2,7 +2,6 @@
 
 namespace BitWasp\Bitcoin\Tests\Transaction\Factory;
 
-
 use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PrivateKeyInterface;
 use BitWasp\Bitcoin\Key\PrivateKeyFactory;
 use BitWasp\Bitcoin\Script\Opcodes;
@@ -22,7 +21,7 @@ class ChecksigTest extends AbstractTestCase
             PrivateKeyFactory::fromInt(3),
         ];
 
-        $pubKeyBufs = array_map(function(PrivateKeyInterface $priv) {
+        $pubKeyBufs = array_map(function (PrivateKeyInterface $priv) {
             return $priv->getPublicKey()->getBuffer();
         }, $keys);
 
