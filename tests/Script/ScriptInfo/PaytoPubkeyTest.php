@@ -32,4 +32,15 @@ class PaytoPubkeyTest extends AbstractTestCase
 
         $this->assertFalse($info->checkInvolvesKey($otherPub));
     }
+
+    public function testVerifyMustBeEnabled()
+    {
+        $priv = PrivateKeyFactory::create();
+        $pub = $priv->getPublicKey();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("CHECKSIGVERIFY not allowed");
+
+        new PayToPubkey(Opcodes::OP_CHECKSIGVERIFY, $pub->getBuffer(), false);
+    }
 }

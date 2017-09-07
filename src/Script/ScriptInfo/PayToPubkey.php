@@ -36,7 +36,10 @@ class PayToPubkey
     {
         if ($opcode === Opcodes::OP_CHECKSIG) {
             $verify = false;
-        } else if ($allowVerify && $opcode === Opcodes::OP_CHECKSIGVERIFY) {
+        } else if ($opcode === Opcodes::OP_CHECKSIGVERIFY) {
+            if (!$allowVerify) {
+                throw new \InvalidArgumentException('CHECKSIGVERIFY not allowed');
+            }
             $verify = true;
         } else {
             throw new \InvalidArgumentException('Malformed pay-to-pubkey script - invalid opcode');
