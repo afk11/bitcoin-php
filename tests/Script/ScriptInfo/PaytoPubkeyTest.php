@@ -43,4 +43,15 @@ class PaytoPubkeyTest extends AbstractTestCase
 
         new PayToPubkey(Opcodes::OP_CHECKSIGVERIFY, $pub->getBuffer(), false);
     }
+
+    public function testChecksOpcode()
+    {
+        $priv = PrivateKeyFactory::create();
+        $pub = $priv->getPublicKey();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Invalid opcode for PayToPubkey script");
+
+        new PayToPubkey(Opcodes::OP_DUP, $pub->getBuffer());
+    }
 }

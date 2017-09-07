@@ -58,7 +58,7 @@ class Multisig
             }
             $verify = true;
         } else {
-            throw new \InvalidArgumentException('Malformed multisig script');
+            throw new \InvalidArgumentException('Invalid opcode for Multisig');
         }
 
         foreach ($keys as $key) {

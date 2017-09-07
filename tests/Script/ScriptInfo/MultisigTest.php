@@ -54,4 +54,15 @@ class MultisigTest extends AbstractTestCase
         $this->assertEquals(Opcodes::OP_CHECKMULTISIGVERIFY, $multisig->isChecksigVerify());
     }
 
+    public function testChecksOpcode()
+    {
+        $priv = PrivateKeyFactory::create();
+        $pub = $priv->getPublicKey();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Invalid opcode for Multisig");
+
+        new Multisig(1, [$pub->getBuffer()], Opcodes::OP_DUP, true);
+    }
+
 }

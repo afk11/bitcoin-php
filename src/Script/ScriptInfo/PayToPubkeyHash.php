@@ -42,7 +42,7 @@ class PayToPubkeyHash
             }
             $verify = true;
         } else {
-            throw new \RuntimeException("Malformed pay-to-pubkey-hash script - invalid opcode");
+            throw new \RuntimeException("Invalid opcode for PayToPubkeyHash script");
         }
 
         $this->hash = $hash160;

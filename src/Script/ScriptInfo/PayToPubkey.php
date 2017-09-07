@@ -42,7 +42,7 @@ class PayToPubkey
             }
             $verify = true;
         } else {
-            throw new \InvalidArgumentException('Malformed pay-to-pubkey script - invalid opcode');
+            throw new \InvalidArgumentException('Invalid opcode for PayToPubkey script');
         }
 
         $this->verify = $verify;
