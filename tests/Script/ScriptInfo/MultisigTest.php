@@ -2,8 +2,10 @@
 
 namespace BitWasp\Bitcoin\Tests\Script\ScriptInfo;
 
+use BitWasp\Bitcoin\Key\PrivateKeyFactory;
 use BitWasp\Bitcoin\Key\PublicKeyFactory;
 use BitWasp\Bitcoin\Script\Classifier\OutputClassifier;
+use BitWasp\Bitcoin\Script\Opcodes;
 use BitWasp\Bitcoin\Script\ScriptFactory;
 use BitWasp\Bitcoin\Script\ScriptInfo\Multisig;
 use BitWasp\Bitcoin\Script\ScriptType;
@@ -32,4 +34,15 @@ class MultisigTest extends AbstractTestCase
         $this->assertTrue($info->getKeyBuffers()[0]->equals($pub->getBuffer()));
         $this->assertTrue($info->getKeyBuffers()[1]->equals($otherpub->getBuffer()));
     }
+    public function testVerifyMustBeEnabled()
+    {
+        $priv = PrivateKeyFactory::create();
+        $pub = $priv->getPublicKey();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("CHECKMULTISIGVERIFY not allowed");
+
+        new Multisig(1, [$pub->getBuffer()], Opcodes::OP_CHECKMULTISIGVERIFY, false);
+    }
+
 }

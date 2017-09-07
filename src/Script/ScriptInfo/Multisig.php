@@ -52,7 +52,10 @@ class Multisig
     {
         if ($opcode === Opcodes::OP_CHECKMULTISIG) {
             $verify = false;
-        } else if ($allowVerify && $opcode === Opcodes::OP_CHECKMULTISIGVERIFY) {
+        } else if ($opcode === Opcodes::OP_CHECKMULTISIGVERIFY) {
+            if (!$allowVerify) {
+                throw new \InvalidArgumentException('CHECKMULTISIGVERIFY not allowed');
+            }
             $verify = true;
         } else {
             throw new \InvalidArgumentException('Malformed multisig script');
