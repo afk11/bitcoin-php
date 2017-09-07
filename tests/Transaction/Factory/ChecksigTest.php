@@ -49,7 +49,7 @@ class ChecksigTest extends AbstractTestCase
     }
 
     /**
-     * @param $info
+     * @param PayToPubkeyHash|PayToPubkey|Multisig $info
      * @dataProvider scriptInfoProvider
      */
     public function testScriptInfoCase($info)

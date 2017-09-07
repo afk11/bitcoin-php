@@ -31,7 +31,7 @@ class PayToPubkeyHash
     public function __construct($opcode, BufferInterface $hash160, $allowVerify = false)
     {
         if ($hash160->getSize() !== 20) {
-            throw new \RuntimeException('Malformed pay-to-pubkey-hash script');
+            throw new \RuntimeException('Key hash must be 20 bytes');
         }
 
         if ($opcode === Opcodes::OP_CHECKSIG) {
