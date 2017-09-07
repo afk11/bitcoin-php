@@ -16,11 +16,6 @@ use BitWasp\Buffertools\BufferInterface;
 class Checksig
 {
     /**
-     * @var string
-     */
-    private $scriptType;
-
-    /**
      * @var bool
      */
     private $required = true;
@@ -29,11 +24,6 @@ class Checksig
      * @var PayToPubkeyHash|PayToPubkey|Multisig
      */
     private $info;
-
-    /**
-     * @var int
-     */
-    protected $requiredSigs;
 
     /**
      * @var int
@@ -49,6 +39,7 @@ class Checksig
      * @var PublicKeyInterface[]|null[]
      */
     protected $publicKeys = [];
+
     /**
      * Checksig constructor.
      * @param Multisig|PayToPubkeyHash|PayToPubkey $info
@@ -63,20 +54,14 @@ class Checksig
         switch ($infoClass) {
             case PayToPubkey::class:
                 /** @var PayToPubkey $info */
-                $this->scriptType = $info->getType();
-                $this->requiredSigs = $info->getRequiredSigCount();
                 $this->keyCount = 1;
                 break;
             case PayToPubkeyHash::class:
                 /** @var PayToPubkeyHash $info */
-                $this->scriptType = ScriptType::P2PKH;
-                $this->requiredSigs = $info->getRequiredSigCount();
                 $this->keyCount = 1;
                 break;
             case Multisig::class:
                 /** @var Multisig $info */
-                $this->scriptType = ScriptType::MULTISIG;
-                $this->requiredSigs = $info->getRequiredSigCount();
                 $this->keyCount = $info->getKeyCount();
                 break;
             default:
@@ -134,7 +119,7 @@ class Checksig
      */
     public function getType()
     {
-        return $this->scriptType;
+        return $this->info->getType();
     }
 
     /**
@@ -156,7 +141,7 @@ class Checksig
      */
     public function getRequiredSigs()
     {
-        return $this->requiredSigs;
+        return $this->info->getRequiredSigCount();
     }
 
     /**
@@ -165,7 +150,7 @@ class Checksig
     public function isFullySigned()
     {
         if ($this->required) {
-            return $this->requiredSigs === count($this->signatures);
+            return $this->info->getRequiredSigCount() === count($this->signatures);
         } else {
             return true;
         }
@@ -177,7 +162,7 @@ class Checksig
      */
     public function hasSignature($idx)
     {
-        if ($idx > $this->requiredSigs) {
+        if ($idx > $this->info->getRequiredSigCount()) {
             throw new \RuntimeException("Out of range signature queried");
         }
 

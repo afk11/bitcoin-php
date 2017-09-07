@@ -78,9 +78,12 @@ class PayToPubkeyHash
         return self::fromDecodedScript($script->getScriptParser()->decode(), $allowVerify);
     }
 
+    /**
+     * @return string
+     */
     public function getType()
     {
-        return ScriptType::P2PK;
+        return ScriptType::P2PKH;
     }
 
     /**
