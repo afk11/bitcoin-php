@@ -9,6 +9,7 @@ use BitWasp\Bitcoin\Script\ScriptFactory;
 use BitWasp\Bitcoin\Script\ScriptInfo\PayToPubkeyHash;
 use BitWasp\Bitcoin\Script\ScriptType;
 use BitWasp\Bitcoin\Tests\AbstractTestCase;
+use BitWasp\Buffertools\Buffer;
 
 class PayToPubkeyHashTest extends AbstractTestCase
 {
@@ -43,5 +44,13 @@ class PayToPubkeyHashTest extends AbstractTestCase
         $this->expectExceptionMessage("CHECKSIGVERIFY not allowed");
 
         new PayToPubkeyHash(Opcodes::OP_CHECKSIGVERIFY, $pub->getPubKeyHash(), false);
+    }
+
+    public function testKeyHashSize()
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage("Key hash must be 20 bytes");
+
+        new PayToPubkeyHash(Opcodes::OP_CHECKSIG, new Buffer());
     }
 }
