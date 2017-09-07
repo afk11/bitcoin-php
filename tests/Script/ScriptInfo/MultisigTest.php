@@ -45,4 +45,13 @@ class MultisigTest extends AbstractTestCase
         new Multisig(1, [$pub->getBuffer()], Opcodes::OP_CHECKMULTISIGVERIFY, false);
     }
 
+    public function testVerifyIsEnabled()
+    {
+        $priv = PrivateKeyFactory::create();
+        $pub = $priv->getPublicKey();
+
+        $multisig = new Multisig(1, [$pub->getBuffer()], Opcodes::OP_CHECKMULTISIGVERIFY, true);
+        $this->assertEquals(Opcodes::OP_CHECKMULTISIGVERIFY, $multisig->isChecksigVerify());
+    }
+
 }
