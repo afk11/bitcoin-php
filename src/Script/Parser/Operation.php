@@ -15,6 +15,13 @@ class Operation
     ];
 
     /**
+     * @var array
+     */
+    protected static $hashing = [
+        Opcodes::OP_RIPEMD160, Opcodes::OP_SHA1, Opcodes::OP_SHA256, Opcodes::OP_HASH160, Opcodes::OP_HASH256,
+    ];
+
+    /**
      * @var bool
      */
     private $push;
@@ -76,6 +83,13 @@ class Operation
         return !$this->isPush() && in_array($this->opCode, self::$logical);
     }
 
+    /**
+     * @return bool
+     */
+    public function isHashOp()
+    {
+        return in_array($this->opCode, self::$logical);
+    }
 
     /**
      * @return int
