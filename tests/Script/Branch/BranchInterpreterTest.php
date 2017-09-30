@@ -2,12 +2,15 @@
 
 namespace BitWasp\Bitcoin\Tests\Script\Branch;
 
+use BitWasp\Bitcoin\Script\Interpreter\Stack;
 use BitWasp\Bitcoin\Script\Opcodes;
+use BitWasp\Bitcoin\Script\Parser\Operation;
 use BitWasp\Bitcoin\Script\Path\BranchInterpreter;
 use BitWasp\Bitcoin\Script\Script;
 use BitWasp\Bitcoin\Script\ScriptFactory;
 use BitWasp\Bitcoin\Script\ScriptInterface;
 use BitWasp\Bitcoin\Tests\AbstractTestCase;
+use BitWasp\Bitcoin\Transaction\Factory\TemplateMatcher;
 use BitWasp\Buffertools\Buffer;
 
 class BranchInterpreterTest extends AbstractTestCase
@@ -285,4 +288,5 @@ class BranchInterpreterTest extends AbstractTestCase
             $this->assertTrue(array_key_exists($searchKey, $search));
         }
     }
+
 }

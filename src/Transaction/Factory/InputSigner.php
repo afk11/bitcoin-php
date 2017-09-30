@@ -535,6 +535,13 @@ class InputSigner implements InputSignerInterface
             ->getBranchByPath($logicalPath)
             ->getScriptSections();
 
+        $matcher = new TemplateMatcher($this->signatureChecker, $sigChunks, $logicalPath);
+        foreach ($scriptSections as $scriptSection) {
+            foreach ($scriptSection as $operation) {
+                $matcher->op($operation);
+            }
+        }
+
         $vfStack = new Stack();
         $stack = new Stack($sigChunks);
 

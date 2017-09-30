@@ -301,6 +301,31 @@ class ComplexSignerTest extends AbstractTestCase
     }
 
     /**
+     * DUP HASH160 [Alice] EQUALVERIFY CHECKSIG
+     * @return array
+     */
+    private function simpleStillWorks2()
+    {
+        $pB = $this->getKeyFromStore(0);
+
+        $pkB = $pB->getPublicKey();
+
+        return [
+            ScriptFactory::sequence([
+                Opcodes::OP_DUP, Opcodes::OP_HASH160, $pkB->getPubKeyHash(), Opcodes::OP_EQUALVERIFY, Opcodes::OP_CHECKSIG,
+            ]),
+            [
+                [],
+            ],
+            [
+                [
+                    [$pB]
+                ],
+            ],
+        ];
+    }
+
+    /**
      * [Alice] CHECKSIGVERIFY [Bob] CHECKSIG
      * @return array
      */
@@ -419,15 +444,16 @@ class ComplexSignerTest extends AbstractTestCase
     public function complexScriptProvider()
     {
         return [
-            $this->conditionalBlockWithMandatoryEnding(),
-            $this->mandatoryStartWithConditionalEnding(),
-            $this->similarConditionalSection(),
-            $this->differentlyTypedConditionalSection(),
-            $this->oneNestedNotif(),
-            $this->simpleStillWorks(),
-            $this->twoMildlySimilarTemplates(),
-            $this->twoRatherDifferentTemplates(),
-            $this->lotsOfTemplates(),
+//            $this->conditionalBlockWithMandatoryEnding(),
+//            $this->mandatoryStartWithConditionalEnding(),
+//            $this->similarConditionalSection(),
+//            $this->differentlyTypedConditionalSection(),
+//            $this->oneNestedNotif(),
+//            $this->simpleStillWorks(),
+            $this->simpleStillWorks2(),
+//            $this->twoMildlySimilarTemplates(),
+//            $this->twoRatherDifferentTemplates(),
+//            $this->lotsOfTemplates(),
         ];
     }
 
