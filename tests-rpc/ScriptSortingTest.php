@@ -177,6 +177,15 @@ TEXT
 
         $resultCBA = $this->makeRpcRequest('createmultisig', [2, [$key2C, $key2B, $key2A]]);
         $this->assertNotEquals($sorted, $resultCBA['result']['address']);
+
+        $resultBAC = $this->makeRpcRequest('createmultisig', [2, [$key2B, $key2A, $key2C], ["sort" => true]]);
+        $this->assertEquals($sorted, $resultBAC['result']['address']);
+
+        $resultCAB = $this->makeRpcRequest('createmultisig', [2, [$key2C, $key2A, $key2B], ["sort" => true]]);
+        $this->assertEquals($sorted, $resultCAB['result']['address']);
+
+        $resultCBA = $this->makeRpcRequest('createmultisig', [2, [$key2C, $key2B, $key2A], ["sort" => true]]);
+        $this->assertEquals($sorted, $resultCBA['result']['address']);
     }
 
     public function testRejectsCompressedKeys()
@@ -210,15 +219,15 @@ TEXT
 
     public function checkLegacyScriptsAreUnsupported($m, array $keyInput, $oldAllowedRedeemScript)
     {
-        $result = $this->makeRpcRequest('createmultisig', [2, $keyInput]);
+        $result = $this->makeRpcRequest('createmultisig', [$m, $keyInput]);
         $this->assertEquals(null, $result['error'], "should not receive an error");
         $this->assertEquals($oldAllowedRedeemScript, $result['result']['redeemScript']);
 
-        $result = $this->makeRpcRequest('createmultisig', [2, $keyInput, ["sort" => false]]);
+        $result = $this->makeRpcRequest('createmultisig', [$m, $keyInput, ["sort" => false]]);
         $this->assertEquals(null, $result['error'], "should not receive an error");
         $this->assertEquals($oldAllowedRedeemScript, $result['result']['redeemScript']);
 
-        $result = $this->makeRpcRequest('createmultisig', [2, $keyInput, ["sort" => true]]);
+        $result = $this->makeRpcRequest('createmultisig', [$m, $keyInput, ["sort" => true]]);
         $this->assertNotEquals(null, $result['error'], "should receive an error");
         $this->assertInternalType('array', $result['error']);
         $this->assertArrayHasKey('message', $result['error']);
