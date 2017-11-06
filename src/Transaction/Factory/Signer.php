@@ -182,11 +182,15 @@ class Signer
     public function get()
     {
         $mutable = TransactionFactory::mutate($this->tx);
+        $inputs = $mutable->inputsMutator();
+
         $witnesses = [];
-        foreach ($mutable->inputsMutator() as $idx => $input) {
-            $sig = $this->signatureCreator[$idx]->serializeSignatures();
-            $input->script($sig->getScriptSig());
-            $witnesses[$idx] = $sig->getScriptWitness();
+        for ($i = 0, $n = count($inputs); $i < $n; $i++) {
+            if (isset($this->signatureCreator[$i])) {
+                $sig = $this->signatureCreator[$i]->serializeSignatures();
+                $inputs[$i]->script($sig->getScriptSig());
+                $witnesses[$i] = $sig->getScriptWitness();
+            }
         }
 
         if (count($witnesses) > 0) {
