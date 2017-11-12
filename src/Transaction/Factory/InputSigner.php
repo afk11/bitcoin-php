@@ -12,6 +12,7 @@ use BitWasp\Bitcoin\Crypto\Random\Rfc6979;
 use BitWasp\Bitcoin\Script\Classifier\OutputClassifier;
 use BitWasp\Bitcoin\Script\Classifier\OutputData;
 use BitWasp\Bitcoin\Script\Interpreter\BitcoinCashChecker;
+use BitWasp\Bitcoin\Script\Interpreter\BitcoinGoldChecker;
 use BitWasp\Bitcoin\Script\Interpreter\Checker;
 use BitWasp\Bitcoin\Script\Interpreter\Interpreter;
 use BitWasp\Bitcoin\Script\Interpreter\Stack;
@@ -89,6 +90,11 @@ class InputSigner implements InputSignerInterface
      * @var bool
      */
     private $redeemBitcoinCash = false;
+
+    /**
+     * @var bool
+     */
+    private $redeemBitcoinGold = false;
 
     /**
      * @var SignData
@@ -211,6 +217,8 @@ class InputSigner implements InputSignerInterface
             }
 
             $checker = new BitcoinCashChecker($this->ecAdapter, $this->tx, $this->nInput, $this->txOut->getValue(), $this->txSigSerializer, $this->pubKeySerializer);
+        } else if ($this->redeemBitcoinGold) {
+            $checker = new BitcoinGoldChecker($this->ecAdapter, $this->tx, $this->nInput, $this->txOut->getValue(), $this->txSigSerializer, $this->pubKeySerializer);
         }
 
         $this->flags = $this->signData->hasSignaturePolicy() ? $this->signData->getSignaturePolicy() : $defaultFlags;
@@ -244,6 +252,16 @@ class InputSigner implements InputSignerInterface
     public function redeemBitcoinCash($setting)
     {
         $this->redeemBitcoinCash = (bool) $setting;
+        return $this;
+    }
+
+    /**
+     * @param bool $setting
+     * @return $this
+     */
+    public function redeemBitcoinGold($setting)
+    {
+        $this->redeemBitcoinGold = (bool) $setting;
         return $this;
     }
 

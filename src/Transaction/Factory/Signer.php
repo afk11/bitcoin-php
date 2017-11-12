@@ -47,6 +47,11 @@ class Signer
     private $redeemBitcoinCash = false;
 
     /**
+     * @var bool
+     */
+    private $redeemBitcoinGold = false;
+
+    /**
      * @var InputSignerInterface[]
      */
     private $signatureCreator = [];
@@ -75,6 +80,21 @@ class Signer
         }
 
         $this->redeemBitcoinCash = $setting;
+
+        return $this;
+    }
+
+    /**
+     * @param bool $setting
+     * @return $this
+     */
+    public function redeemBitcoinGold($setting)
+    {
+        if (!is_bool($setting)) {
+            throw new \InvalidArgumentException("Boolean value expected");
+        }
+
+        $this->redeemBitcoinGold = $setting;
 
         return $this;
     }
@@ -127,6 +147,7 @@ class Signer
             $input = (new InputSigner($this->ecAdapter, $this->tx, $nIn, $txOut, $signData, $this->sigSerializer, $this->pubKeySerializer))
                 ->tolerateInvalidPublicKey($this->tolerateInvalidPublicKey)
                 ->redeemBitcoinCash($this->redeemBitcoinCash)
+                ->redeemBitcoinGold($this->redeemBitcoinGold)
                 ->extract();
 
             $this->signatureCreator[$nIn] = $input;
