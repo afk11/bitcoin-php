@@ -36,7 +36,9 @@
     "mdanter/ecc": "^0.4.0",
     "bitwasp/buffertools": "^0.4.0",
     "bitwasp/secp256k1-php": "^0.1.2",
-    "guzzlehttp/guzzle": "^6.3"
+    "guzzlehttp/guzzle": "^6.3",
+    "curl/curl": "^1.8",
+    "dunglas/php-torcontrol": "^1.0"
   },
   "require-dev": {
     "ext-json": "*",
