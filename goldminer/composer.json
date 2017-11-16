@@ -1,0 +1,5 @@
+{
+    "require": {
+        "dunglas/php-torcontrol": "^1.0"
+    }
+}
