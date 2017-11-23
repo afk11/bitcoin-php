@@ -4,7 +4,9 @@ namespace BitWasp\Bitcoin\Script\Interpreter;
 
 use BitWasp\Bitcoin\Script\ScriptInterface;
 use BitWasp\Bitcoin\Transaction\SignatureHash\BitcoinGoldSigHash;
+use BitWasp\Bitcoin\Transaction\SignatureHash\Hasher;
 use BitWasp\Bitcoin\Transaction\SignatureHash\SigHash;
+use BitWasp\Bitcoin\Transaction\SignatureHash\V1Hasher;
 use BitWasp\Buffertools\Buffer;
 use BitWasp\Buffertools\BufferInterface;
 
@@ -23,11 +25,26 @@ class BitcoinGoldChecker extends Checker
         if ($sigVersion !== 0) {
             throw new \RuntimeException("SigVersion must be 0");
         }
+        $nForkHashType = $sigHashType;
+        $fUseForkId = ($sigHashType & SigHash::BITCOINCASH) > 0;
+        if ($fUseForkId) {
+            $nForkHashType |= 79 << 8;
+        }
 
         $cacheCheck = $sigVersion . $sigHashType . $script->getBuffer()->getBinary();
         if (!isset($this->sigHashCache[$cacheCheck])) {
-            $hasher = new BitcoinGoldSigHash($this->transaction, $this->amount);
-            $hash = $hasher->calculate($script, $this->nInput, $sigVersion, $sigHashType);
+            if ($sigVersion === 1 || $sigHashType & SigHash::BITCOINCASH) {
+                $hasher = new V1Hasher($this->transaction, $this->amount);
+            } else {
+                if ($this->hasherV0) {
+                    $hasher = $this->hasherV0;
+                } else {
+                    $hasher = $this->hasherV0 = new Hasher($this->transaction);
+                }
+            }
+
+            $hash = $hasher->calculate($script, $this->nInput, $nForkHashType);
+            echo $hash->getHex().PHP_EOL;
             $this->sigHashCache[$cacheCheck] = $hash->getBinary();
         } else {
             $hash = new Buffer($this->sigHashCache[$cacheCheck], 32, $this->adapter->getMath());

@@ -21,7 +21,7 @@ $mpk = "04" . $input;
 $key = PublicKeyFactory::fromHex($mpk);
 $xpub = ElectrumKeyFactory::fromKey($key);
 
-$batchSize = 100;
+$batchSize = 10;
 $start = -$batchSize;
 $history = [];
 
@@ -33,7 +33,7 @@ class PrivateClient {
     {
         $this->client = new Client([
             'base_uri' => $uri,
-            'proxy' => $proxyUri
+//            'proxy' => $proxyUri
         ]);
         $this->torControl = new TorControl\TorControl(
             array(
@@ -62,11 +62,11 @@ class PrivateClient {
     }
 }
 
-$client = new PrivateClient("https://btgexp.com/ext/", 'socks5://localhost:9050', "localhost", 9051, "testingpassword");
+//   /insight-api/addr/[:addr]/utxo
+
+$client = new PrivateClient("https://btg-bitcore2.trezor.io/api/", 'socks5://localhost:9050', "localhost", 9051, "testingpassword");
 $client->newNym();
 
-$res = $client->request('GET', '/ext/getaddress/GP4MnT7Xm4ahZhRcWFaqPGkZknMda1XuzA', ['verify' => false]);
-$json = $res->getBody()->getContents();
 do {
     $start += $batchSize;
     $end = $start + $batchSize;
@@ -75,15 +75,13 @@ do {
     $addrs = [];
     $utxoCount = 0;
     for ($i = $start; $i < $end; $i++) {
-        $client->newNym();
         $child = $xpub->deriveChild($i);
         $addr = new PayToPubKeyHashAddress($child->getPubKeyHash());
         echo $addr->getAddress().PHP_EOL;
 
-        $res = $client->request('GET', 'getaddress/GP4MnT7Xm4ahZhRcWFaqPGkZknMda1XuzA', ['verify' => false]);
+        $res = $client->request('GET', 'addr/GP4MnT7Xm4ahZhRcWFaqPGkZknMda1XuzA/utxo');
         $body = json_decode($res->getBody()->getContents(), true);
-        print_r($body);
-        die();
+
         $utxos = [];
         $n = count($utxos);
         if ($n > 0) {
@@ -96,6 +94,7 @@ do {
         }
     }
 
+    echo "got utxos here, yay $utxoCount\n";
     $history[] = $utxoCount;
 } while(count($history) < 3 || array_sum(array_slice($history, -3)) != 0);
 
