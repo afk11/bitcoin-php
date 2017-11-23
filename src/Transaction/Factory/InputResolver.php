@@ -9,6 +9,10 @@ use BitWasp\Bitcoin\Script\Interpreter\Stack;
 use BitWasp\Bitcoin\Script\Opcodes;
 use BitWasp\Bitcoin\Script\Parser\Operation;
 use BitWasp\Bitcoin\Script\ScriptInterface;
+use BitWasp\Bitcoin\Transaction\Factory\Matcher\InputType\DataBlob;
+use BitWasp\Bitcoin\Transaction\Factory\Matcher\InputType\FixedLengthBlob;
+use BitWasp\Bitcoin\Transaction\Factory\Matcher\InputType\PublicKey;
+use BitWasp\Bitcoin\Transaction\Factory\Matcher\InputType\Signature;
 use BitWasp\Bitcoin\Transaction\Factory\Matcher\MatcherState;
 use BitWasp\Bitcoin\Transaction\Factory\Matcher\Operation\OperationInterface;
 use BitWasp\Bitcoin\Transaction\TransactionInterface;
@@ -175,7 +179,7 @@ class InputResolver
                         }
 
                         $state->vfStack()->push($value);
-                        return $step;
+                        break;
 
                     case Opcodes::OP_ENDIF:
                         $state->vfStack()->pop();
@@ -184,8 +188,6 @@ class InputResolver
                         $state->vfStack()->push(!$state->vfStack()->pop());
                         break;
                 }
-
-                return null;
             }
 
             if ($fExec) {
@@ -202,19 +204,54 @@ class InputResolver
                 }
 
                 if ($op->isPush()) {
-                    $state->stack()->push($op->getData());
+                    $state->addElement(new DataBlob());
                 } else {
                     switch ($op->getOp()) {
                         case Opcodes::OP_DUP:
+                            echo "DUP\n";
+                            $value = $state->readValue(-1, DataBlob::class);
+                            $state->addElement($value);
+                            break;
+                        case Opcodes::OP_HASH160:
+                            $state->consumeValue(-1, DataBlob::class);
+                            $state->addElement(new FixedLengthBlob(20));
+                            break;
+                        case Opcodes::OP_EQUAL:
+                        case Opcodes::OP_EQUALVERIFY:
+                            echo "EQUALVERIFY\n";
+                            $state->debugTypes();
+                            $state->consumeValue(-1, DataBlob::class);
+                            $state->consumeValue(-1, DataBlob::class);
+                            $state->addElement(new FixedLengthBlob(1));
+                            if ($op->getOp() === Opcodes::OP_EQUALVERIFY) {
+                                $state->consumeValue(-1, FixedLengthBlob::class);
+                            }
+                            break;
+                        case Opcodes::OP_CHECKSIG:
+                        case Opcodes::OP_CHECKSIGVERIFY:
+                            echo "CHECKSIG\n";
+                            echo "1-publickey\n";
 
+                            $state->consumeValue(-1, PublicKey::class);
+                            $state->consumeValue(-1, Signature::class);
+                            echo "2-signature\n";
+
+                            $state->debugTypes();
+                            $state->addElement(new FixedLengthBlob(1));
+                            if ($op->getOp() === Opcodes::OP_CHECKSIGVERIFY) {
+                                $state->consumeValue(-1, FixedLengthBlob::class);
+                            }
+                        echo "5\n";
                             break;
                     }
                 }
+
+                $state->debugTypes();
                 //echo "chk template: " . ($template === null ?'null': "have template: " . $template[0]) . PHP_EOL;
             }
         }
 
-        //print_R($state);
+        print_R($state->stack()->all());
     }
 
     private function matchOperation(ResolverState $state, OperationInterface $operation) {

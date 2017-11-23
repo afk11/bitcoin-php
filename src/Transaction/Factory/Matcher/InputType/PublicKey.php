@@ -3,7 +3,7 @@
 namespace BitWasp\Bitcoin\Transaction\Factory\Matcher\InputType;
 
 
-class PublicKey
+class PublicKey extends DataBlob
 {
 
 }

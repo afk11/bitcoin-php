@@ -6,8 +6,13 @@ namespace BitWasp\Bitcoin\Transaction\Factory;
 use BitWasp\Bitcoin\Script\Interpreter\Stack;
 use BitWasp\Bitcoin\Script\Opcodes;
 use BitWasp\Bitcoin\Script\Parser\Operation;
+use BitWasp\Bitcoin\Transaction\Factory\Matcher\InputType\DataBlob;
+use BitWasp\Bitcoin\Transaction\Factory\Matcher\InputType\FixedLengthBlob;
+use BitWasp\Bitcoin\Transaction\Factory\Matcher\InputType\PublicKey;
+use BitWasp\Bitcoin\Transaction\Factory\Matcher\InputType\Signature;
 use BitWasp\Bitcoin\Transaction\Factory\Matcher\Operation\OperationInterface;
 use BitWasp\Buffertools\BufferInterface;
+use Psr\Log\InvalidArgumentException;
 
 class ResolverState
 {
@@ -37,6 +42,10 @@ class ResolverState
      * @var BufferInterface[]
      */
     private $inputStack;
+    /**
+     * @var array
+     */
+    private $valTypes;
 
     public function __construct(array $logicalPath, array $inputStack)
     {
@@ -45,7 +54,7 @@ class ResolverState
         $this->ops = [];
         $this->logicalPath = $logicalPath;
         $this->inputStack = $inputStack;
-        $this->inputTypes = [];
+        $this->valTypes = new Stack();
     }
 
     public function vfStack() {
@@ -54,6 +63,124 @@ class ResolverState
 
     public function stack() {
         return $this->stack;
+    }
+
+    private function mutateType($idx, $toType, $length = null) {
+        $val = $this->valTypes[$idx];
+        $newType = null;
+
+        if ($val instanceof DataBlob) {
+            if (PublicKey::class === $toType) {
+                $newType = new PublicKey();
+            } else if (Signature::class === $toType) {
+                $newType = new Signature();
+            } else if (FixedLengthBlob::class === $toType) {
+                if (!$length) {
+                    throw new InvalidArgumentException();
+                }
+                $newType = new FixedLengthBlob($length);
+            }
+        }
+
+        if (null === $newType) {
+            throw new \RuntimeException("Failed to mutate type");
+        }
+
+        $valTypes = new Stack();
+        foreach ($this->valTypes->all() as $i => $valType) {
+            if (spl_object_hash($val) === spl_object_hash($valType)) {
+                echo "replacing $i, " . get_class($val) . " with $toType\n";
+                $valTypes->push($newType);
+            } else {
+                $valTypes->push($valType);
+            }
+        }
+
+        $this->valTypes = $valTypes;
+    }
+
+    private $created = [];
+    public function readValue($idx, $type, $length = null) {
+        if (isset($this->valTypes[$idx])) {
+            if (get_class($this->valTypes[$idx]) !== $type) {
+                echo "read type, but didn't match, try to mutate\n";
+                echo get_class($this->valTypes[$idx]).PHP_EOL;
+                echo $type.PHP_EOL;
+                if (($parent = get_parent_class($this->valTypes[$idx]))) {
+                    echo "parent: $parent\n";
+                    if ($parent === $type) {
+                        return $this->valTypes[$idx];
+                    }
+                }
+
+                echo "MUTATE BEGIN\n";
+                $this->debugTypes();
+                $this->mutateType($idx, $type, $length);
+                $this->debugTypes();
+                echo "MUTATE END\n";
+            }
+            return $this->valTypes[$idx];
+        }
+
+        switch ($type) {
+            case DataBlob::class:
+                $type = new DataBlob();
+                $this->valTypes->push($type);
+                break;
+            case FixedLengthBlob::class:
+                if (!$length) {
+                    throw new InvalidArgumentException();
+                }
+                $type = new FixedLengthBlob($length);
+                $this->valTypes->push($type);
+                break;
+            case PublicKey::class:
+                $this->valTypes->push(new PublicKey());
+                break;
+            case Signature::class:
+                $this->valTypes->push(new Signature());
+                break;
+            default:
+                throw new InvalidArgumentException("Unsupported type");
+        }
+
+        $this->created[] = $this->valTypes[$idx];
+        return $type;
+    }
+
+    public function addsValue($idx) {
+
+    }
+
+    public function consumeValue($idx, $type) {
+        $this->readValue($idx, $type);
+        unset($this->valTypes[$idx]);
+        return $type;
+    }
+
+    public function debugTypes() {
+        echo "types\n";
+        foreach ($this->valTypes as $type) {
+            echo " * " . get_class($type).PHP_EOL;
+        }
+        echo PHP_EOL;
+        echo "created\n";
+        foreach ($this->created as $type) {
+            echo " * " . get_class($type).PHP_EOL;
+        }
+        echo PHP_EOL;
+    }
+
+    public function addElement($element) {
+        switch (get_class($element)) {
+            case DataBlob::class:
+            case FixedLengthBlob::class:
+                break;
+            default:
+                throw new \RuntimeException("Unknown element type");
+        }
+
+        $this->valTypes->push($element);
     }
 
     public function withOperation(Operation $operation) {
