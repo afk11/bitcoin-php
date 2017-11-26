@@ -31,26 +31,6 @@ class RbfTransactionTest extends AbstractTestCase
         $this->rpcFactory = $rpcFactory;
     }
 
-    private function assertSendRawTransaction($result) {
-        $this->assertInternalType('array', $result);
-        $this->assertArrayHasKey('error', $result);
-        $this->assertEquals(null, $result['error']);
-
-        $this->assertArrayHasKey('result', $result);
-        $this->assertEquals(64, strlen($result['result']));
-    }
-
-    private function assertBitcoindError($errorCode, $result)
-    {
-        $this->assertInternalType('array', $result);
-        $this->assertArrayHasKey('error', $result);
-        $this->assertInternalType('array', $result['error']);
-        $this->assertEquals($errorCode, $result['error']['code']);
-
-        $this->assertArrayHasKey('error', $result);
-        $this->assertEquals(null, $result['result']);
-    }
-
     /**
      * @param Utxo[] $utxos
      * @param PrivateKeyInterface[] $privKeys
@@ -121,7 +101,7 @@ class RbfTransactionTest extends AbstractTestCase
         );
 
         $result = $bitcoind->makeRpcRequest('sendrawtransaction', [$tx->getHex()]);
-        $this->assertSendRawTransaction($result);
+        $this->assertRpcSendRawTx($result);
 
         // Part 2: tx[#1: not replaceable | #2 not replaceable]
         $tx = $this->createTransaction(
@@ -132,7 +112,7 @@ class RbfTransactionTest extends AbstractTestCase
         );
 
         $result = $bitcoind->makeRpcRequest('sendrawtransaction', [$tx->getHex()]);
-        $this->assertSendRawTransaction($result);
+        $this->assertRpcSendRawTx($result);
 
         $bitcoind->destroy();
 
@@ -165,7 +145,7 @@ class RbfTransactionTest extends AbstractTestCase
         );
 
         $result = $bitcoind->makeRpcRequest('sendrawtransaction', [$tx->getHex()]);
-        $this->assertSendRawTransaction($result);
+        $this->assertRpcSendRawTx($result);
 
         // Part 2: [fail] tx[#1: not replacable | #2 replacable]
         $tx = $this->createTransaction(
@@ -219,7 +199,7 @@ class RbfTransactionTest extends AbstractTestCase
         );
 
         $result = $bitcoind->makeRpcRequest('sendrawtransaction', [$tx->getHex()]);
-        $this->assertSendRawTransaction($result);
+        $this->assertRpcSendRawTx($result);
 
 
         // Part 2: replace tx[#1: replaceable 1 | #2: replaceable 1]
@@ -235,7 +215,7 @@ class RbfTransactionTest extends AbstractTestCase
         );
 
         $result = $bitcoind->makeRpcRequest('sendrawtransaction', [$tx->getHex()]);
-        $this->assertSendRawTransaction($result);
+        $this->assertRpcSendRawTx($result);
 
 
         // Part 3: replace tx[#1: replaceable 0 | #2: replaceable 0 | #3: replaceable 0]
@@ -251,7 +231,7 @@ class RbfTransactionTest extends AbstractTestCase
         );
 
         $result = $bitcoind->makeRpcRequest('sendrawtransaction', [$tx->getHex()]);
-        $this->assertSendRawTransaction($result);
+        $this->assertRpcSendRawTx($result);
 
 
         // Part 4: this one won't work, inputs are all irreplacable

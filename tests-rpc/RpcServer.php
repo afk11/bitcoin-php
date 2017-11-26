@@ -168,7 +168,7 @@ class RpcServer
         return $client;
     }
 
-    private function activateSoftforks()
+    public function activateSoftforks()
     {
         if ($this->softforks) {
             return;

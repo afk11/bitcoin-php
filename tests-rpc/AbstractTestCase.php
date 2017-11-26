@@ -119,4 +119,57 @@ abstract class AbstractTestCase extends \PHPUnit_Framework_TestCase
         return $flags;
     }
 
+    protected function assertRpcNoError($result) {
+        $this->assertInternalType('array', $result);
+        $this->assertArrayHasKey('error', $result);
+        $this->assertEquals(null, $result['error']);
+    }
+
+    protected function assertRpcSubmitBlock($result) {
+        $this->assertRpcNoError($result);
+        $this->assertArrayHasKey('result', $result);
+        $this->assertNull($result['result'], "block submission should succeed");
+    }
+
+    protected function assertRpcSendRawTx($result) {
+        $this->assertRpcNoError($result);
+
+        $this->assertArrayHasKey('result', $result);
+        $this->assertEquals(64, strlen($result['result']));
+    }
+
+    protected function assertRpcGetBestBlockHash($result) {
+        $this->assertRpcNoError($result);
+
+        $this->assertArrayHasKey('result', $result);
+        $this->assertEquals(64, strlen($result['result']));
+    }
+
+    protected function assertRpcGetBlock($result) {
+        $this->assertRpcNoError($result);
+
+        $this->assertArrayHasKey('result', $result);
+        $this->assertInternalType('array', $result['result']);
+        $this->assertArrayHasKey('height', $result['result']);
+        $this->assertArrayHasKey('hash', $result['result']);
+        $this->assertArrayHasKey('version', $result['result']);
+        $this->assertArrayHasKey('previousblockhash', $result['result']);
+        $this->assertArrayHasKey('merkleroot', $result['result']);
+        $this->assertArrayHasKey('bits', $result['result']);
+        $this->assertArrayHasKey('time', $result['result']);
+        $this->assertArrayHasKey('nonce', $result['result']);
+
+    }
+
+    protected function assertBitcoindError($errorCode, $result)
+    {
+        $this->assertInternalType('array', $result);
+        $this->assertArrayHasKey('error', $result);
+        $this->assertInternalType('array', $result['error']);
+        $this->assertEquals($errorCode, $result['error']['code']);
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertEquals(null, $result['result']);
+    }
+
 }

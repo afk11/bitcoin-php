@@ -102,13 +102,34 @@ class TxBuilder
     }
 
     /**
-     * @param BufferInterface|string $hashPrevOut - hex or BufferInterface
-     * @param int $nPrevOut
-     * @param Script|null $script
+     * @param ScriptInterface $script
      * @param int $nSequence
      * @return $this
      */
-    public function input($hashPrevOut, $nPrevOut, Script $script = null, $nSequence = TransactionInputInterface::SEQUENCE_FINAL)
+    public function coinbase(ScriptInterface $script, $nSequence = TransactionInputInterface::SEQUENCE_FINAL)
+    {
+        if (count($this->inputs) > 0) {
+            throw new \RuntimeException("Coinbase must be first input");
+        }
+
+        $this->input(
+            Buffer::hex("0000000000000000000000000000000000000000000000000000000000000000", 32),
+            0xffffffff,
+            $script,
+            $nSequence
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param BufferInterface|string $hashPrevOut - hex or BufferInterface
+     * @param int $nPrevOut
+     * @param ScriptInterface|null $script
+     * @param int $nSequence
+     * @return $this
+     */
+    public function input($hashPrevOut, $nPrevOut, ScriptInterface $script = null, $nSequence = TransactionInputInterface::SEQUENCE_FINAL)
     {
         $this->inputs[] = new TransactionInput(
             new OutPoint(
