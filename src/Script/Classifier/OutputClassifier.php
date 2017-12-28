@@ -415,7 +415,7 @@ class OutputClassifier
     }
 
     /**
-     * @param array $decoded
+     * @param Operation[] $decoded
      * @param null $solution
      * @return string
      */
