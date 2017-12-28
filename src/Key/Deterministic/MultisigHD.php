@@ -43,9 +43,9 @@ class MultisigHD
     private $sort;
 
     /**
-     * @param int|string $m
+     * @param int $m
      * @param string $path
-     * @param array $keys
+     * @param HierarchicalKey[] $keys
      * @param HierarchicalKeySequence $sequences
      * @param bool $sort
      */
@@ -135,7 +135,7 @@ class MultisigHD
     /**
      * Derive each HK child and produce a new MultisigHD object
      *
-     * @param int|string $sequence
+     * @param int $sequence
      * @return MultisigHD
      */
     public function deriveChild(int $sequence): MultisigHD
