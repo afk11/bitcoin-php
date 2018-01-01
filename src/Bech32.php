@@ -218,12 +218,8 @@ class Bech32
             throw new Bech32Exception('Invalid location for `1` character');
         }
 
-        $hrp = [];
-        for ($i = 0; $i < $positionOne; $i++) {
-            $hrp[$i] = chr($chars[$i]);
-        }
+        $hrp = pack("C*", ...array_slice($chars, 0, $positionOne));
 
-        $hrp = implode('', $hrp);
         $data = [];
         for ($i = $positionOne + 1; $i < $length; $i++) {
             $data[] = ($chars[$i] & 0x80) ? -1 : self::$charsetKey[$chars[$i]];
