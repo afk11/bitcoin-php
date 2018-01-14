@@ -13,7 +13,7 @@ use BitWasp\Buffertools\BufferInterface;
 use BitWasp\Buffertools\Exceptions\ParserOutOfRange;
 use BitWasp\Buffertools\Parser;
 
-class ExtendedKeySerializer
+class ScriptVersionExtendedKeySerializer
 {
     /**
      * @var EcAdapterInterface
@@ -26,14 +26,35 @@ class ExtendedKeySerializer
     private $verSer;
 
     /**
+     * ScriptVersionExtendedKeySerializer constructor.
+     * @param array $scriptVersionMap
+     * @param VersionedExtendedKeySerializer $verSer
      * @param EcAdapterInterface $ecAdapter
-     * @throws \Exception
      */
-    public function __construct(EcAdapterInterface $ecAdapter, VersionedExtendedKeySerializer $verSer)
+    public function __construct(array $scriptVersionMap, VersionedExtendedKeySerializer $verSer, EcAdapterInterface $ecAdapter)
     {
         $this->verSer = $verSer;
         $this->ecAdapter = $ecAdapter;
+
+        foreach ($scriptVersionMap as $version => $scriptType) {
+            if (strlen($version) !== 8 || !ctype_xdigit($version)) {
+                throw new \InvalidArgumentException("Invalid version bytes - must be 4 bytes worth of hex");
+            }
+
+            if (!is_array($scriptType)) {
+                throw new \InvalidArgumentException("Invalid script type - must be an array");
+            }
+
+
+        }
+
+        // scriptType and magic bytes
+
+        ///////////////////////
+
+        //
     }
+
 
     /**
      * @param NetworkInterface $network
