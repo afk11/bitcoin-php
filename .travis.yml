@@ -7,8 +7,12 @@ php:
   - 7.2
   - nightly
 
+
 env:
-  - PHPUNIT=true PHPUNIT_EXT=true BITCOIN_VERSION="0.15.0"
+  global:
+    - BITCOIN_VERSION="0.15.0"
+  matrix:
+    - PHPUNIT=true PHPUNIT_EXT=true
 
 dist: trusty
 sudo: required
@@ -18,14 +22,16 @@ cache:
     ${HOME}/bitcoin
 
 matrix:
+  exclude:
+    - php: 7.0
+      env: PHPUNIT=true PHPUNIT_EXT=true 
+
   include:
     # add extra test runs for php7: coverage, codestyle, examples, rpc tests
     - php: 7.0
-      env: PHPUNIT=true BITCOIN_VERSION="0.15.0" PHPUNIT_EXT=true COVERAGE=true
+      env: PHPUNIT=true BITCOIN_VERSION="0.15.0" PHPUNIT_EXT=true COVERAGE=true CODE_STYLE=true EXAMPLES=true
     - php: 7.0
-      env: CODE_STYLE=true EXAMPLES=true
-    - php: 7.0
-      env: RPC_TEST=true BITCOIN_VERSION="0.15.0"
+      env: RPC_TEST=true
 
 install:
     - |
