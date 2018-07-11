@@ -75,8 +75,17 @@ class HierarchicalKeyFactory
     public function fromEntropy(BufferInterface $entropy, ScriptDataFactory $scriptFactory = null): HierarchicalKey
     {
         $seed = Hash::hmac('sha512', $entropy, new Buffer('Bitcoin seed'));
-        $privSecret = $seed->slice(0, 32);
-        $chainCode = $seed->slice(32, 32);
+        return $this->fromRootParams($seed->slice(0, 32), $seed->slice(32, 32), $scriptFactory);
+    }
+
+    /**
+     * @param BufferInterface $privSecret
+     * @param BufferInterface $chainCode
+     * @param ScriptDataFactory $scriptFactory
+     * @return HierarchicalKey
+     */
+    protected function fromRootParams(BufferInterface $privSecret, BufferInterface $chainCode, ScriptDataFactory $scriptFactory = null): HierarchicalKey
+    {
         $scriptFactory = $scriptFactory ?: new P2pkhScriptDataFactory(EcSerializer::getSerializer(PublicKeySerializerInterface::class, true, $this->adapter));
         return new HierarchicalKey($this->adapter, $scriptFactory, 0, 0, 0, $chainCode, $this->privFactory->fromBuffer($privSecret));
     }

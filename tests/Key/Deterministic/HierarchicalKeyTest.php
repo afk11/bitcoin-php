@@ -395,20 +395,6 @@ class HierarchicalKeyTest extends AbstractTestCase
      * @dataProvider getInvalidSequences
      * @param int $sequence
      * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Sequence is outside valid range
-     */
-    public function testInvalidSequenceGetHmac($sequence)
-    {
-        $xPrv = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
-        $hdFactory = new HierarchicalKeyFactory();
-        $key = $hdFactory->fromExtended($xPrv, $this->network);
-        $key->getHmacSeed($sequence);
-    }
-
-    /**
-     * @dataProvider getInvalidSequences
-     * @param int $sequence
-     * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Sequence is outside valid range, must be >= 0 && <= (2^31)-1
      */
     public function testInvalidSequenceDeriveChild($sequence)
