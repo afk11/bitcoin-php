@@ -74,7 +74,23 @@ class PathParser
             case Opcodes::OP_IF:
             case Opcodes::OP_NOTIF:
                 echo "OP_IF/OP_NOTIF split\n";
-                $this->split(Opcodes::OP_IF === $operation->getOp());
+                $activation = Opcodes::OP_IF === $operation->getOp();
+                $numPaths = count($this->codePaths);
+                for ($i = 0; $i < $numPaths; $i++) {
+                    $path = $this->codePaths[$i];
+                    $path->addOp($operation);
+                    if ($path->isActive()) {
+                        $newIdx = count($this->codePaths);
+                        echo "split $i , activation " . ($activation?"y":"n").PHP_EOL;
+                        echo "before  $i - " . $path .PHP_EOL;
+                        $this->codePaths[$newIdx] = $path->split($activation, $newIdx);
+                        echo "current $i - ".$path.PHP_EOL;
+                        echo "new     $newIdx - ". $this->codePaths[$newIdx].PHP_EOL;
+                    } else {
+                        echo "inactive branch ($i)\n";
+                        $path->inactiveBranch();
+                    }
+                }
                 break;
             case Opcodes::OP_ENDIF:
                 echo "OP_ENDIF popactive\n";

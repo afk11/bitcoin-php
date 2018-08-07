@@ -39,6 +39,7 @@ class Hasher extends SigHash
         }
 
         $serializer = new TxSigHashSerializer($this->tx, $txOutScript, $inputToSign, $sighashType);
+        echo "Serialized to be hashed for signature\n" . bin2hex($serializer->serializeTransaction()).PHP_EOL;
         $sigHashData = new Buffer($serializer->serializeTransaction() . pack('V', $sighashType));
         return Hash::sha256d($sigHashData);
     }

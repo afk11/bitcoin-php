@@ -58,6 +58,9 @@ class CodePath
         return true;
     }
 
+    /**
+     * ELSE
+     */
     public function swapActive()
     {
         if (0 === count($this->active)) {
@@ -68,6 +71,9 @@ class CodePath
         $this->active[$i] = !$this->active[$i];
     }
 
+    /**
+     * ENDIF
+     */
     public function popActive()
     {
         if (0 === count($this->active)) {
@@ -76,23 +82,18 @@ class CodePath
         array_pop($this->active);
     }
 
-    public function inactiveBranch(bool $activation)
+    public function inactiveBranch()
     {
-        $script = chr($activation ? Opcodes::OP_IF : Opcodes::OP_NOTIF);
-        $this->script .= $script;
         array_push($this->active, false);
     }
 
     public function split(bool $activation, int $antiIndex): CodePath
     {
         $new = new CodePath($this->script, $this->active, $this->trace);
-        $script = chr($activation ? Opcodes::OP_IF : Opcodes::OP_NOTIF);
-        $this->script .= $script;
         array_push($this->active, $activation);
         array_push($this->trace, $activation);
         array_push($this->indexOpposite, $antiIndex);
 
-        $new->script .= $script;
         array_push($new->active, !$activation);
         array_push($new->trace, !$activation);
 
