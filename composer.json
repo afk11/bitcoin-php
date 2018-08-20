@@ -11,6 +11,13 @@
       "role": "Author"
     }
   ],
+  "repositories": [{
+    "type": "vcs",
+    "url":  "https://github.com/afk11/PHPASN1"
+  },{
+    "type": "vcs",
+    "url":  "https://github.com/afk11/phpecc"
+  }],
   "autoload": {
     "psr-4": {
       "BitWasp\\Bitcoin\\": "src/"
@@ -24,11 +31,12 @@
   },
   "require": {
     "php-64bit": ">=7.0",
+    "fgrosse/phpasn1": "dev-wycheproof",
     "paragonie/random_compat": "^1.4.0|^2.0.0",
     "pleonasm/merkle-tree": "1.0.0",
     "composer/semver": "^1.4.0",
     "lastguest/murmurhash": "v2.0.0",
-    "mdanter/ecc": "^0.5.0",
+    "mdanter/ecc": "dev-wycheproof",
     "bitwasp/buffertools": "^0.5.0",
     "bitwasp/secp256k1-php": "^0.2.0",
     "bitwasp/bech32": "^0.0.1"
