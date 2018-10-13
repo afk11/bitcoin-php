@@ -46,4 +46,10 @@ interface PublicKeyInterface extends KeyInterface
      * @return bool
      */
     public function verify(BufferInterface $msg32, SignatureInterface $signature): bool;
+
+    /**
+     * @param bool $compressed
+     * @return PublicKeyInterface
+     */
+    public function withCompression(bool $compressed): self;
 }

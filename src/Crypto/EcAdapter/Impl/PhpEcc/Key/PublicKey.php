@@ -160,6 +160,13 @@ class PublicKey extends Key implements PublicKeyInterface, \Mdanter\Ecc\Crypto\K
         return $this->compressed;
     }
 
+    public function withCompression(bool $compressed): PublicKeyInterface
+    {
+        $clone = clone($this);
+        $clone->compressed = $compressed;
+        return $clone;
+    }
+
     /**
      * @param PublicKey $other
      * @return bool

@@ -102,6 +102,13 @@ class PublicKey extends Key implements PublicKeyInterface
         return $this->compressed;
     }
 
+    public function withCompression(bool $compressed): PublicKeyInterface
+    {
+        $clone = clone($this);
+        $clone->compressed = $compressed;
+        return $clone;
+    }
+
     /**
      * @return resource
      */
