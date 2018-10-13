@@ -468,6 +468,7 @@ class HierarchicalKeyTest extends AbstractTestCase
                 'getPublicKey',
                 'sign',
                 'toWif',
+                'getSigner',
 
                 // Key Interface
                 'tweakAdd',
@@ -476,7 +477,6 @@ class HierarchicalKeyTest extends AbstractTestCase
                 'isPrivate',
                 'getPubKeyHash',
                 'getAddress',
-
                 // serializable
                 'getBuffer',
                 'getInt',

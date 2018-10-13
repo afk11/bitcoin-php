@@ -8,6 +8,8 @@ use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\Secp256k1\Serializer\Key\PrivateKeySer
 use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\Secp256k1\Signature\Signature;
 use BitWasp\Bitcoin\Crypto\EcAdapter\Key\Key;
 use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PrivateKeyInterface;
+use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\SignerInterface;
+use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\Signer;
 use BitWasp\Bitcoin\Crypto\Random\RbgInterface;
 use BitWasp\Bitcoin\Exceptions\InvalidPrivateKey;
 use BitWasp\Bitcoin\Network\NetworkInterface;
@@ -165,6 +167,14 @@ class PrivateKey extends Key implements PrivateKeyInterface
         $secret = new Buffer($privateKey);
 
         return $this->ecAdapter->getPrivateKey($secret->getGmp(), $this->compressed);
+    }
+
+    /**
+     * @return SignerInterface
+     */
+    public function getSigner()
+    {
+        return new Signer($this->ecAdapter, $this);
     }
 
     /**

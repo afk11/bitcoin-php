@@ -7,6 +7,8 @@ use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Adapter\EcAdapter;
 use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Serializer\Key\PrivateKeySerializer;
 use BitWasp\Bitcoin\Crypto\EcAdapter\Key\Key;
 use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PrivateKeyInterface;
+use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\SignerInterface;
+use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\Signer;
 use BitWasp\Bitcoin\Crypto\Random\RbgInterface;
 use BitWasp\Bitcoin\Exceptions\InvalidPrivateKey;
 use BitWasp\Bitcoin\Network\NetworkInterface;
@@ -139,6 +141,11 @@ class PrivateKey extends Key implements PrivateKeyInterface, \Mdanter\Ecc\Crypto
         }
 
         return $this->publicKey;
+    }
+
+    public function getSigner()
+    {
+        return new Signer($this->ecAdapter, $this);
     }
 
     /**

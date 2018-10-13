@@ -3,6 +3,7 @@
 namespace BitWasp\Bitcoin\Crypto\EcAdapter\Key;
 
 use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\SignatureInterface;
+use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\SignerInterface;
 use BitWasp\Bitcoin\Crypto\Random\RbgInterface;
 use BitWasp\Bitcoin\Network\NetworkInterface;
 use BitWasp\Buffertools\BufferInterface;
@@ -15,6 +16,11 @@ interface PrivateKeyInterface extends KeyInterface
      * @return \GMP
      */
     public function getSecret();
+
+    /**
+     * @return SignerInterface
+     */
+    public function getSigner();
 
     /**
      * @param BufferInterface $msg32

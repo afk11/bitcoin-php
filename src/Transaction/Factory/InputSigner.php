@@ -8,7 +8,7 @@ use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PrivateKeyInterface;
 use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PublicKeyInterface;
 use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PublicKeySerializerInterface;
 use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Signature\DerSignatureSerializerInterface;
-use BitWasp\Bitcoin\Crypto\Random\Rfc6979;
+use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\SignerInterface;
 use BitWasp\Bitcoin\Exceptions\SignerException;
 use BitWasp\Bitcoin\Script\Classifier\OutputClassifier;
 use BitWasp\Bitcoin\Script\Classifier\OutputData;
@@ -596,17 +596,17 @@ class InputSigner implements InputSignerInterface
     /**
      * Pure function to produce a signature for a given $key, $scriptCode, $sigHashType, $sigVersion.
      *
-     * @param PrivateKeyInterface $key
+     * @param SignerInterface $signer
      * @param ScriptInterface $scriptCode
      * @param int $sigHashType
      * @param int $sigVersion
      * @return TransactionSignatureInterface
      * @throws SignerException
      */
-    private function calculateSignature(PrivateKeyInterface $key, ScriptInterface $scriptCode, $sigHashType, $sigVersion)
+    private function calculateSignature(SignerInterface $signer, ScriptInterface $scriptCode, $sigHashType, $sigVersion)
     {
         $hash = $this->calculateSigHashUnsafe($scriptCode, $sigHashType, $sigVersion);
-        $ecSignature = $this->ecAdapter->sign($hash, $key, new Rfc6979($this->ecAdapter, $key, $hash, 'sha256'));
+        $ecSignature = $signer->sign($hash);
         return new TransactionSignature($this->ecAdapter, $ecSignature, $sigHashType);
     }
 
@@ -746,36 +746,49 @@ class InputSigner implements InputSignerInterface
      */
     public function sign(PrivateKeyInterface $privateKey, $sigHashType = SigHash::ALL)
     {
+        return $this->signWithSigner($privateKey->getSigner(), $sigHashType);
+    }
+
+    /**
+     * Sign the input using the provided SignerInterface 1and $sigHashType
+     *
+     * @param SignerInterface $signer
+     * @param int $sigHashType
+     * @return $this
+     * @throws SignerException
+     */
+    public function signWithSigner(SignerInterface $signer, $sigHashType = SigHash::ALL)
+    {
         if ($this->isFullySigned()) {
             return $this;
         }
 
-        if (SigHash::V1 === $this->sigVersion && !$privateKey->isCompressed()) {
+        $publicKey = $signer->getPublicKey();
+        if (SigHash::V1 === $this->sigVersion && !$publicKey->isCompressed()) {
             throw new \RuntimeException('Uncompressed keys are disallowed in segwit scripts - refusing to sign');
         }
 
         if ($this->signScript->getType() === ScriptType::P2PK) {
-            if (!$this->pubKeySerializer->serialize($privateKey->getPublicKey())->equals($this->signScript->getSolution())) {
+            if (!$this->pubKeySerializer->serialize($publicKey)->equals($this->signScript->getSolution())) {
                 throw new \RuntimeException('Signing with the wrong private key');
             }
-            $this->signatures[0] = $this->calculateSignature($privateKey, $this->signScript->getScript(), $sigHashType, $this->sigVersion);
+            $this->signatures[0] = $this->calculateSignature($signer, $this->signScript->getScript(), $sigHashType, $this->sigVersion);
         } else if ($this->signScript->getType() === ScriptType::P2PKH) {
-            $publicKey = $privateKey->getPublicKey();
             if (!$publicKey->getPubKeyHash()->equals($this->signScript->getSolution())) {
                 throw new \RuntimeException('Signing with the wrong private key');
             }
 
             if (!array_key_exists(0, $this->signatures)) {
-                $this->signatures[0] = $this->calculateSignature($privateKey, $this->signScript->getScript(), $sigHashType, $this->sigVersion);
+                $this->signatures[0] = $this->calculateSignature($signer, $this->signScript->getScript(), $sigHashType, $this->sigVersion);
             }
 
             $this->publicKeys[0] = $publicKey;
         } else if ($this->signScript->getType() === ScriptType::MULTISIG) {
             $signed = false;
-            foreach ($this->publicKeys as $keyIdx => $publicKey) {
-                if ($publicKey instanceof PublicKeyInterface) {
-                    if ($privateKey->getPublicKey()->equals($publicKey)) {
-                        $this->signatures[$keyIdx] = $this->calculateSignature($privateKey, $this->signScript->getScript(), $sigHashType, $this->sigVersion);
+            foreach ($this->publicKeys as $keyIdx => $scriptKey) {
+                if ($scriptKey instanceof PublicKeyInterface) {
+                    if ($scriptKey->equals($publicKey)) {
+                        $this->signatures[$keyIdx] = $this->calculateSignature($signer, $this->signScript->getScript(), $sigHashType, $this->sigVersion);
                         $signed = true;
                     }
                 }
