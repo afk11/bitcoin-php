@@ -69,30 +69,38 @@ class TransactionSignature extends Serializable implements TransactionSignatureI
     }
 
     /**
+     * @param string $fieldName
+     * @param int $start
+     * @param int $length
+     * @param string $binaryString
+     * @throws SignatureNotCanonical
+     */
+    private static function verifyFieldElement(string $fieldName, int $start, int $length, string $binaryString)
+    {
+        if ($length === 0) {
+            throw new SignatureNotCanonical('Signature ' . $fieldName . ' length is zero');
+        }
+        $typePrefix = ord(substr($binaryString, $start - 2, 1));
+        if ($typePrefix !== 0x02) {
+            throw new SignatureNotCanonical('Signature ' . $fieldName . ' value type mismatch');
+        }
+        $val = substr($binaryString, $start, $length);
+        $vAnd = $val[0] & chr(0x80);
+        if (ord($vAnd) === 128) {
+            throw new SignatureNotCanonical('Signature ' . $fieldName . ' value is negative');
+        }
+        if ($length > 1 && $val[0] === "\x00" && !ord(($val[1] & chr(0x80)))) {
+            throw new SignatureNotCanonical('Signature ' . $fieldName . ' value excessively padded');
+        }
+    }
+
+    /**
      * @param BufferInterface $sig
      * @return bool
      * @throws SignatureNotCanonical
      */
     public static function isDERSignature(BufferInterface $sig): bool
     {
-        $checkVal = function ($fieldName, $start, $length, $binaryString) {
-            if ($length === 0) {
-                throw new SignatureNotCanonical('Signature ' . $fieldName . ' length is zero');
-            }
-            $typePrefix = ord(substr($binaryString, $start - 2, 1));
-            if ($typePrefix !== 0x02) {
-                throw new SignatureNotCanonical('Signature ' . $fieldName . ' value type mismatch');
-            }
-            $val = substr($binaryString, $start, $length);
-            $vAnd = $val[0] & chr(0x80);
-            if (ord($vAnd) === 128) {
-                throw new SignatureNotCanonical('Signature ' . $fieldName . ' value is negative');
-            }
-            if ($length > 1 && $val[0] === "\x00" && !ord(($val[1] & chr(0x80)))) {
-                throw new SignatureNotCanonical('Signature ' . $fieldName . ' value excessively padded');
-            }
-        };
-
         $bin = $sig->getBinary();
         $size = $sig->getSize();
         if ($size < 9) {
@@ -123,8 +131,8 @@ class TransactionSignature extends Serializable implements TransactionSignatureI
             throw new SignatureNotCanonical('Signature R+S length mismatch');
         }
 
-        $checkVal('R', $startR, $lenR, $bin);
-        $checkVal('S', $startS, $lenS, $bin);
+        self::verifyFieldElement('R', $startR, $lenR, $bin);
+        self::verifyFieldElement('S', $startS, $lenS, $bin);
 
         return true;
     }
